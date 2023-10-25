@@ -10,10 +10,14 @@
 #include <math.h>
 #include<errno.h>
 
-#define BUFFER_SIZE 30
+#define BUFFER_SIZE 128
+
 int numErrors = 0;
-void error(char *msg) {
-    fprintf(stderr,"%s", msg);
+void error(char *msg,int sockfd,int sleepTime) 
+{
+    perror(msg);
+    close(sockfd);
+    sleep(sleepTime);
     numErrors++;
 }
 
@@ -53,26 +57,26 @@ int main(int argc, char *argv[]) {
     }
 
     int loopNum2 = loopNum;
-    while (loopNum--) 
+    for(int i=0;i<loopNum;i++)
     {
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
         if (sockfd < 0)
         {
-            error("ERROR opening socket");
+            error("ERROR opening socket",sockfd,sleepTime);
             continue;
         }
 
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(timeout)) < 0)
         {
-            error("Setsockopt\n");
+            error("Setsockopt",sockfd,sleepTime);
             continue;
         }
 
         server = gethostbyname(argv[1]);
 
         if (server == NULL) {
-            error("ERROR, no such host\n");
+            error("ERROR, no such host",sockfd,sleepTime);
             continue;
         }
 
@@ -87,8 +91,7 @@ int main(int argc, char *argv[]) {
 
         if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
         {
-            error("ERROR Connecting!");
-            close(sockfd);
+            error("ERROR Connecting!",sockfd,sleepTime);
             continue;
         }
 
@@ -99,11 +102,15 @@ int main(int argc, char *argv[]) {
         int file_size = ftell(fp);
         fclose(fp);
 
+        if (gettimeofday(&tv, NULL) == 0) 
+        {
+            Tsend = (double) tv.tv_sec + (double)tv.tv_usec / 1000000.0;
+        }
+        
         n = write(sockfd,&file_size,sizeof(file_size));
         if (n < 0)
         {
-            error("ERROR writing to socket");
-            close(sockfd);
+            error("ERROR writing to socket",sockfd,sleepTime);
             continue;
         }
 
@@ -112,55 +119,62 @@ int main(int argc, char *argv[]) {
         bzero(buffer,sizeof(buffer));
         int readBytes;
 
-        if (gettimeofday(&tv, NULL) == 0) 
-        {
-            Tsend = (double) tv.tv_sec + (double)tv.tv_usec / 1000000.0;
-        }
-        printf("Tsend:%lf\n",Tsend);
+        // printf("Tsend:%lf\n",Tsend);
+        int f1 = 0;
         while ((readBytes = read(gradeFd, buffer , sizeof(buffer))) > 0) 
         {   
             n = write(sockfd, buffer, readBytes);   
             if (n < 0)
             {
-                error("ERROR writing to socket");
-                close(sockfd);
-                goto Label;
+                error("ERROR writing to socket",sockfd,sleepTime);
+                f1=1;
+                break;
             }
             bzero(buffer, sizeof(buffer));
         }
+        if(f1)
+            continue;
             
         int file=0,flag=0;
-        int n=read(sockfd,&file,sizeof(file));
+        int n=recv(sockfd,&file,sizeof(file),0);
         if (n < 0){
-            error("ERROR reading from socket\n");
-            close(sockfd);
+            if (errno == EAGAIN || errno == EWOULDBLOCK) 
+            {
+                // fprintf(stderr,"Received timeout.\n");
+                perror("Received Timeout");
+                numTimeouts++;
+            }
+            else
+            {
+                error("ERROR reading from socket",sockfd,sleepTime);
+            }
             continue;
         }
 
         if(file==0)
         {
             int reab=recv(sockfd,buffer,sizeof(buffer),0);
-            printf("Reads:%d\n",reab);
+            // printf("Reads:%d\n",reab);
             if (reab == -1) 
             {
                 flag=1;
                 if (errno == EAGAIN || errno == EWOULDBLOCK) 
                 {
-                    fprintf(stderr,"Received timeout.\n");
+                    // fprintf(stderr,"Received timeout.\n");
+                    perror("Received Timeout..");
                     numTimeouts++;
                 } 
                 else 
                 {
-                    error("Error receiving data.\n");
-                    close(sockfd);
-                    continue;
+                    error("Error receiving data.",sockfd,sleepTime);
                 }
+                continue;
 	        }
             write(1,buffer,reab);
         }
         else
         {
-            int readb;
+            int readb,f2=0;
             file+=16;
             while(file>0)
             {
@@ -170,42 +184,45 @@ int main(int argc, char *argv[]) {
                     flag=1;
                     if (errno == EAGAIN || errno == EWOULDBLOCK) 
                     {
-                        fprintf(stderr,"Received timeout.\n");
+                        // fprintf(stderr,"Received timeout.\n");
+                        perror("Received Timeout...");
+
+                        
                         numTimeouts++;
                     } 
                     else 
                     {
-                        error("Error receiving data.\n");
-                        close(sockfd);
+                        error("Error receiving data.",sockfd,sleepTime);
                     }
-                    goto Label;
+                    f2=1;
+                    break;
                 }
                 
                 n = write(1,buffer,readb);
                 if (n < 0)
                 {
-                    error("ERROR writing to STDOUT!\n");
-                    close(sockfd);
-                    continue;
+                    error("ERROR writing to STDOUT!",sockfd,sleepTime);
+                    f2=1;
+                    break;
                 }
                 file-=readb;
-                
                 bzero(buffer,sizeof(buffer));
             }
+            if(f2)
+                continue;
         }
         
         if (gettimeofday(&tv, NULL) == 0)
         {
             Trcv = (double) tv.tv_sec + (double)tv.tv_usec / 1000000.0;
         }
-        printf("Trcv:%lf\n",Trcv);
+        // printf("Trcv:%lf\n",Trcv);
         if (!flag)
             successfulRes++;
         
         totalTime += (Trcv - Tsend);
         printf("\nResponse Time: %lf\n", Trcv - Tsend);
         
-        Label:
         sleep(sleepTime);
         close(sockfd);
     }
