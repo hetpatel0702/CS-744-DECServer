@@ -11,44 +11,72 @@
 #include<stdbool.h>
  //buffer for reading and writing the messages
 #define BUFFER_SIZE 30
-#define MAX_QUEUE_SIZE 100
+#define MAX_QUEUE_SIZE 30
 pthread_mutex_t qmutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t qempty=PTHREAD_COND_INITIALIZER;
 int queue[MAX_QUEUE_SIZE];
 int qsize=0;
+int front=-1;
+int rear=-1;
 
-void error(char *msg) {
+void error(char *msg) 
+{
   perror(msg);
 //   pthread_exit(NULL);
+}
+int isFull() 
+{
+	if ((front == rear + 1) || (front == 0 && rear == MAX_QUEUE_SIZE - 1)) return 1;
+	return 0;
+}
+
+int isEmpty()
+{
+	if (front == -1) return 1;
+	return 0;
 }
 void enqueue(int newsockfd) 
 {
     pthread_mutex_lock(&qmutex);
-    if (qsize < MAX_QUEUE_SIZE) {
-        queue[qsize]=newsockfd;
-        qsize++;
-        pthread_cond_signal(&qempty);
-    }
-	pthread_mutex_unlock(&qmutex);
-    // printf("Equeue size:%d\n",qsize);
+    if (isFull())
+    	printf("\n Queue is full!! \n");
+  	else
+	{
+		if (front == -1) 
+			front = 0;
+		rear = (rear + 1) % MAX_QUEUE_SIZE;
+		queue[rear] = newsockfd;
+		qsize=qsize+1;
+		pthread_cond_signal(&qempty);
+  	}
+    pthread_mutex_unlock(&qmutex);
 }
 
 int dequeue()
 {
-	pthread_mutex_lock(&qmutex);
-
-	while(qsize==0)
-		pthread_cond_wait(&qempty,&qmutex);
-
-	
-    int sockfd=queue[0];
-	for(int i=0;i<qsize-1;i++)
+	int sockfd;
+    pthread_mutex_lock(&qmutex);
+  	while(isEmpty()) 
 	{
-		queue[i]=queue[i+1];
+		pthread_cond_wait(&qempty,&qmutex);
 	}
-    qsize--;
-	pthread_mutex_unlock(&qmutex);
-	return sockfd;
+   
+	sockfd= queue[front];
+	if (front == rear) 
+	{
+		front = -1;
+		rear = -1;
+	} 
+	
+	else 
+	{
+		front = (front + 1) % MAX_QUEUE_SIZE;
+		qsize=qsize-1;
+	}
+  
+    pthread_mutex_unlock(&qmutex);
+    return sockfd;
+   
 }
 void filesize(FILE *fp,int newsockfd)
 {
@@ -95,15 +123,6 @@ void sresult(int newsockfd,int fp,int a,char * buffer)
 			break;
 		
 		bzero(buffer,BUFFER_SIZE);
-	}
-}
-
-void *measure_queue_size()
-{
-	while(1)
-	{
-		printf("Queue size is:%d\n",qsize);
-		sleep(1);
 	}
 }
 
@@ -260,12 +279,13 @@ int main(int argc, char *argv[])
 	serv_addr.sin_port = htons(portno);  // Need to convert number from host order to network order
 
 	if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-		error("ERROR on binding");
+	error("ERROR on binding");
 
 	listen(sockfd, 3000); 
 
 
 	clilen = sizeof(cli_addr);  
+
 
 	int thread_pool=atoi(argv[2]);
 
@@ -278,13 +298,6 @@ int main(int argc, char *argv[])
 		}
 		printf("Thread %lu Created!\n" ,thread[i]);
 	}
-	
-	pthread_t worker_qsize;
-	if(pthread_create(&worker_qsize, NULL, measure_queue_size, NULL) != 0)
-	{
-		fprintf(stderr,"Error Creating Thread\n");
-	}
-	printf("Qsize Thread %lu Created!\n" ,worker_qsize);
 
 	while (1)
 	{
@@ -301,6 +314,8 @@ int main(int argc, char *argv[])
 			continue;
     	}
 		// printf("Sockfd %d pushed into queue\n",*newsockfd);
+		// if(isFull())
+		// continue;
 		enqueue(*newsockfd);		
 	}
 

@@ -1,5 +1,5 @@
 /* run client using: ./client localhost <server_port> */
-//bharat
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -102,11 +102,6 @@ int main(int argc, char *argv[]) {
         int file_size = ftell(fp);
         fclose(fp);
 
-        if (gettimeofday(&tv, NULL) == 0) 
-        {
-            Tsend = (double) tv.tv_sec + (double)tv.tv_usec / 1000000.0;
-        }
-        
         n = write(sockfd,&file_size,sizeof(file_size));
         if (n < 0)
         {
@@ -119,6 +114,10 @@ int main(int argc, char *argv[]) {
         bzero(buffer,sizeof(buffer));
         int readBytes;
 
+        if (gettimeofday(&tv, NULL) == 0) 
+        {
+            Tsend = (double) tv.tv_sec + (double)tv.tv_usec / 1000000.0;
+        }
         // printf("Tsend:%lf\n",Tsend);
         int f1 = 0;
         while ((readBytes = read(gradeFd, buffer , sizeof(buffer))) > 0) 
@@ -186,8 +185,6 @@ int main(int argc, char *argv[]) {
                     {
                         // fprintf(stderr,"Received timeout.\n");
                         perror("Received Timeout...");
-
-                        
                         numTimeouts++;
                     } 
                     else 
