@@ -17,39 +17,66 @@ pthread_mutex_t qmutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t qempty=PTHREAD_COND_INITIALIZER;
 int queue[MAX_QUEUE_SIZE];
 int qsize=0;
+int front=-1,rear = -1;
 
 void error(char *msg) {
   perror(msg);
 //   pthread_exit(NULL);
 }
+int isFull() 
+{
+	if ((front == rear + 1) || (front == 0 && rear == MAX_QUEUE_SIZE - 1)) return 1;
+	return 0;
+}
+
+int isEmpty()
+{
+	if (front == -1) return 1;
+	return 0;
+}
 void enqueue(int newsockfd) 
 {
     pthread_mutex_lock(&qmutex);
-    if (qsize < MAX_QUEUE_SIZE) {
-        queue[qsize]=newsockfd;
-        qsize++;
-        pthread_cond_signal(&qempty);
-    }
-	pthread_mutex_unlock(&qmutex);
+    if (isFull())
+    	printf("\n Queue is full!! \n");
+  	else
+	{
+		if (front == -1) 
+			front = 0;
+		rear = (rear + 1) % MAX_QUEUE_SIZE;
+		queue[rear] = newsockfd;
+		qsize=qsize+1;
+		pthread_cond_signal(&qempty);
+  	}
+    pthread_mutex_unlock(&qmutex);
 }
 
 int dequeue()
 {
-	pthread_mutex_lock(&qmutex);
-
-	while(qsize==0)
-		pthread_cond_wait(&qempty,&qmutex);
-
-	
-    int sockfd=queue[0];
-	for(int i=0;i<qsize-1;i++)
+	int sockfd;
+    pthread_mutex_lock(&qmutex);
+  	while(isEmpty()) 
 	{
-		queue[i]=queue[i+1];
+		pthread_cond_wait(&qempty,&qmutex);
 	}
-    qsize--;
-	pthread_mutex_unlock(&qmutex);
-	return sockfd;
+   
+	sockfd= queue[front];
+	if (front == rear) 
+	{
+		front = -1;
+		rear = -1;
+	} 
+	else 
+	{
+		front = (front + 1) % MAX_QUEUE_SIZE;
+	}
+	qsize=qsize-1;
+
+    pthread_mutex_unlock(&qmutex);
+    return sockfd;
+   
 }
+
 void filesize(FILE *fp,int newsockfd)
 {
 	fseek(fp,0,SEEK_END);
