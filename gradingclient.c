@@ -1,5 +1,4 @@
 /* run client using: ./client localhost <server_port> */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +10,6 @@
 #include<errno.h>
 
 #define BUFFER_SIZE 128
-
 int numErrors = 0;
 void error(char *msg,int sockfd,int sleepTime) 
 {
