@@ -10,17 +10,16 @@
 #include <pthread.h>
 #include<stdbool.h>
  //buffer for reading and writing the messages
-#define BUFFER_SIZE 30
-#define MAX_QUEUE_SIZE 30
+#define BUFFER_SIZE 128
+#define MAX_QUEUE_SIZE 1000
+
 pthread_mutex_t qmutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t qempty=PTHREAD_COND_INITIALIZER;
 int queue[MAX_QUEUE_SIZE];
 int qsize=0;
-int front=-1;
-int rear=-1;
+int front=-1,rear = -1;
 
-void error(char *msg) 
-{
+void error(char *msg) {
   perror(msg);
 //   pthread_exit(NULL);
 }
@@ -67,33 +66,33 @@ int dequeue()
 		front = -1;
 		rear = -1;
 	} 
-	
 	else 
 	{
 		front = (front + 1) % MAX_QUEUE_SIZE;
-		qsize=qsize-1;
 	}
-  
+	qsize=qsize-1;
+
     pthread_mutex_unlock(&qmutex);
     return sockfd;
    
 }
+
 void filesize(FILE *fp,int newsockfd)
 {
 	fseek(fp,0,SEEK_END);
 	int file_size = ftell(fp);
 	fclose(fp);
 	write(newsockfd,&file_size,sizeof(file_size));
-	// printf("File:%d\n",file_size);
-	// fflush(stdout);
 }
 void sresult(int newsockfd,int fp,int a,char * buffer)
 {
 	bzero(buffer,BUFFER_SIZE);
-	int x;
+	int x,n=0;
 	if(fp==-1)
 	{
-		send(newsockfd,"PASS\n",strlen("PASS\n"),0);
+		n = send(newsockfd,"PASS\n",strlen("PASS\n"),0);
+		if(n < 0)
+			error("Send failed");
 		return;
 	}
 	else if(a==0)
@@ -117,12 +116,24 @@ void sresult(int newsockfd,int fp,int a,char * buffer)
 		if(flag)
 			x = 0;
 		k = read(fp,buffer + x,BUFFER_SIZE-x);
+
 		flag=1;
-		int n=send(newsockfd,buffer,k+x,0);
+		n = send(newsockfd,buffer,k+x,0);
+		if(n < 0)
+			error("Send failed");
 		if(k <= 0)
 			break;
 		
 		bzero(buffer,BUFFER_SIZE);
+	}
+}
+
+void *measure_queue_size()
+{
+	while(1)
+	{
+		printf("Queue size is:%d\n",qsize);
+		sleep(1);
 	}
 }
 
@@ -131,9 +142,11 @@ void *gradeTheFile(void *f)
 	while(1)
 	{
 		int newsockfd=dequeue();
+		if (newsockfd < 0) {
+			error("ERROR on accept");
+		}
 
-		pthread_t threadID = pthread_self();
-		// printf("Thread %lu handling sockfd %d\n",threadID,newsockfd);		
+		pthread_t threadID = pthread_self();		
 		char buffer[BUFFER_SIZE];
 		char Cerror_file[50];
 		char Rerror_file[50];
@@ -155,26 +168,30 @@ void *gradeTheFile(void *f)
 		sprintf(grade_file_exe,"file%lu",threadID);
 
 
-		if (newsockfd < 0) {
-			error("ERROR on accept");
-		}
 
 		// bzero(buffer, BUFFER_SIZE); //set buffer to zero
 		
+					
 		int file_size = 0;
 		int n = read(newsockfd,&file_size,sizeof(file_size));
-					
 		if (n < 0)
 			error("ERROR reading from socket");
 
 		int newGradeFd = open(grade_file,O_RDWR | O_CREAT,S_IRUSR | S_IWUSR | S_IXUSR);
-		
+		if (newGradeFd < 0)
+			error("ERROR opening file");
+
 		bzero(buffer,BUFFER_SIZE);
 		while (file_size > 0)
 		{	
 			int readBytes = read(newsockfd, buffer, BUFFER_SIZE);
-			
+			if (readBytes < 0)
+				error("ERROR reading from socket");
+
 			int wroteBytes = write(newGradeFd,buffer,readBytes);
+			if (wroteBytes < 0)
+				error("ERROR writing to file");
+
 			file_size -= readBytes;
 
 			bzero(buffer,BUFFER_SIZE);
@@ -192,7 +209,9 @@ void *gradeTheFile(void *f)
 			filesize(fp,newsockfd);
 			
 			int cerror = open(Cerror_file,O_RDONLY);
-			
+			if (cerror < 0)
+				error("ERROR opening file");
+
 			bzero(buffer,BUFFER_SIZE);
 			sresult(newsockfd,cerror,0,buffer);
 			
@@ -211,7 +230,9 @@ void *gradeTheFile(void *f)
 				filesize(fp,newsockfd);
 							
 				int rerror = open(Rerror_file,O_RDONLY);
-			
+				if(rerror < 0)
+					error("ERROR opening file");
+
 				bzero(buffer,BUFFER_SIZE);
 				sresult(newsockfd,rerror,1,buffer);
 				close(rerror);
@@ -226,7 +247,9 @@ void *gradeTheFile(void *f)
 					filesize(fp,newsockfd);
 					
 					int diffFd = open(diff_file,O_RDONLY);
-					
+					if(diffFd < 0)
+						error("ERROR opening file");
+
 					bzero(buffer,BUFFER_SIZE);
 					sresult(newsockfd,diffFd,2,buffer);
 					close(diffFd);
@@ -279,13 +302,12 @@ int main(int argc, char *argv[])
 	serv_addr.sin_port = htons(portno);  // Need to convert number from host order to network order
 
 	if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-	error("ERROR on binding");
+		error("ERROR on binding");
 
 	listen(sockfd, 3000); 
 
 
 	clilen = sizeof(cli_addr);  
-
 
 	int thread_pool=atoi(argv[2]);
 
@@ -296,7 +318,12 @@ int main(int argc, char *argv[])
 		{
 			fprintf(stderr,"Error Creating Thread\n");
 		}
-		printf("Thread %lu Created!\n" ,thread[i]);
+	}
+	
+	pthread_t worker_qsize;
+	if(pthread_create(&worker_qsize, NULL, measure_queue_size, NULL) != 0)
+	{
+		fprintf(stderr,"Error Creating Thread\n");
 	}
 
 	while (1)
@@ -313,12 +340,8 @@ int main(int argc, char *argv[])
 			free(newsockfd); 
 			continue;
     	}
-		// printf("Sockfd %d pushed into queue\n",*newsockfd);
-		// if(isFull())
-		// continue;
 		enqueue(*newsockfd);		
 	}
 
 	return 0;
 }
-
