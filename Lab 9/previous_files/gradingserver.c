@@ -301,8 +301,10 @@ int main(int argc, char *argv[])
 	portno = atoi(argv[1]);
 	serv_addr.sin_port = htons(portno);  // Need to convert number from host order to network order
 
-	if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+	if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
 		error("ERROR on binding");
+		exit(0);
+	}
 
 	listen(sockfd, 3000); 
 
