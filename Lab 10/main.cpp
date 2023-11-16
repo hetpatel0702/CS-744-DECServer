@@ -9,7 +9,15 @@ unordered_map<int, pair<int,int>> request_status_map;
 pthread_mutex_t receive_queue_mutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t receive_cond=PTHREAD_COND_INITIALIZER;
 
+pthread_mutex_t status_queue_mutex=PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t status_cond=PTHREAD_COND_INITIALIZER;
+
+pthread_mutex_t process_queue_mutex=PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t process_cond=PTHREAD_COND_INITIALIZER;
+
 struct receiveQueue *r_front = NULL, *r_rear = NULL;
+struct statusq *s_front = NULL, *s_rear= NULL;
+struct processq *p_front = NULL, *p_rear = NULL;
 
 int main(int argc, char *argv[]) 
 {
