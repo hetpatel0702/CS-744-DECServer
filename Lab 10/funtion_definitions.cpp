@@ -1,0 +1,113 @@
+#include "funtion_declarations.h"
+
+void error(const char *msg) 
+{
+	perror(msg);
+}
+
+void filesize(FILE *fp, int newsockfd)
+{
+    fseek(fp, 0, SEEK_END);
+    int file_size = ftell(fp);
+    fclose(fp);
+    write(newsockfd, &file_size, sizeof(file_size));
+}
+
+void sresult(int newsockfd,int fp,int a,char * buffer)
+{
+	bzero(buffer,BUFFER_SIZE);
+	int x,n=0;
+	if(fp==-1)
+	{
+		n = send(newsockfd,"PASS\n",strlen("PASS\n"),0);
+		if(n < 0)
+			error("Send failed");
+		return;
+	}
+	else if(a==0)
+	{
+		strcat(buffer,"\nCOMPILE ERROR\n\n");
+		x = strlen("\nCOMPILE ERROR\n\n");
+	}
+	else if(a==1)
+	{
+		strcat(buffer,"\nRUNTIME ERROR\n\n");
+		x = strlen("\nRUNTIME ERROR\n\n");
+	}
+	else
+	{
+		strcat(buffer,"\nOUTPUT ERROR \n\n");
+		x = strlen("\nOUTPUT ERROR \n\n");
+	}
+	int k,flag=0;
+	while(1)
+	{
+		if(flag)
+			x = 0;
+		k = read(fp,buffer + x,BUFFER_SIZE-x);
+
+		flag=1;
+		n = send(newsockfd,buffer,k+x,0);
+		if(n < 0)
+			error("Send failed");
+		if(k <= 0)
+			break;
+		
+		bzero(buffer,BUFFER_SIZE);
+	}
+}
+
+void receive_enqueue(int newsockfd, int reqID) 
+{
+	struct receiveQueue *node = new struct receiveQueue;
+	node->sockfd = newsockfd;
+	node->requestid=reqID;
+	node->next = NULL;
+	
+	if (r_front == NULL) 
+	{
+		r_front = r_rear = node;
+		pthread_cond_signal(&receive_cond);
+	} 
+	else
+	{
+		r_rear->next = node;
+		r_rear = node;
+	}
+}
+
+struct receiveQueue* receive_dequeue()  
+{  
+	pthread_mutex_lock(&receive_queue_mutex);
+
+    struct receiveQueue *temp;   
+    while(r_front == NULL)
+    {
+		pthread_cond_wait(&receive_cond,&receive_queue_mutex);  
+    }  
+    temp = r_front;
+	if(r_front == r_rear)  
+    {  
+        r_front=r_rear=NULL;   
+    }  
+    else  
+    {  
+        r_front = r_front->next;  
+        r_rear->next = r_front;   
+    }  
+
+	pthread_mutex_unlock(&receive_queue_mutex);
+	return temp;
+}
+
+
+int generateUniqueID()
+{
+	auto currentTime = chrono::system_clock::now();
+	auto durationSinceEpoch = currentTime.time_since_epoch();
+	auto secondsSinceEpoch = chrono::duration_cast<chrono::seconds>(durationSinceEpoch);
+
+	time_t timeInSeconds = secondsSinceEpoch.count();
+	return timeInSeconds;
+}
+
