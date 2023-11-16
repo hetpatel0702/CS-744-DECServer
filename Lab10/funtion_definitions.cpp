@@ -4,59 +4,6 @@ void error(char *msg)
 {
   perror(msg);
 }
-int isFull() 
-{
-	if ((front == rear + 1) || (front == 0 && rear == MAX_QUEUE_SIZE - 1)) return 1;
-	return 0;
-}
-
-int isEmpty()
-{
-	if (front == -1) return 1;
-	return 0;
-}
-void enqueue(int newsockfd) 
-{
-    pthread_mutex_lock(&qmutex);
-    if (isFull())
-    	printf("\n Queue is full!! \n");
-  	else
-	{
-		if (front == -1) 
-			front = 0;
-		rear = (rear + 1) % MAX_QUEUE_SIZE;
-		queue[rear] = newsockfd;
-		qsize=qsize+1;
-		pthread_cond_signal(&qempty);
-  	}
-    pthread_mutex_unlock(&qmutex);
-}
-
-int dequeue()
-{
-	int sockfd;
-    pthread_mutex_lock(&qmutex);
-  	while(isEmpty()) 
-	{
-		pthread_cond_wait(&qempty,&qmutex);
-	}
-   
-	sockfd= queue[front];
-	if (front == rear) 
-	{
-		front = -1;
-		rear = -1;
-	} 
-	else 
-	{
-		front = (front + 1) % MAX_QUEUE_SIZE;
-	}
-	qsize=qsize-1;
-
-    pthread_mutex_unlock(&qmutex);
-    return sockfd;
-   
-}
 
 void filesize(FILE *fp,int newsockfd)
 {
@@ -64,6 +11,151 @@ void filesize(FILE *fp,int newsockfd)
 	int file_size = ftell(fp);
 	fclose(fp);
 	write(newsockfd,&file_size,sizeof(file_size));
+}
+void receive_enqueue(int newsockfd, int reqID) 
+{
+	struct receiveQueue *node = new struct receiveQueue;
+	node->sockfd = newsockfd;
+	node->requestid=reqID;
+	node->next = NULL;
+
+	if (r_front == NULL) 
+	{
+		r_front = r_rear = node;
+	
+		pthread_cond_signal(&receive_cond);
+	} 
+	else
+	{
+		r_rear->next = node;
+		r_rear = node;
+	}
+}
+
+struct receiveQueue* receive_dequeue()  
+{  
+	pthread_mutex_lock(&receive_queue_mutex);
+
+    struct receiveQueue *temp;   
+    
+    while(r_front == NULL)
+    {
+		pthread_cond_wait(&receive_cond,&receive_queue_mutex);  
+    }  
+	
+    temp = r_front;
+	if(r_front == r_rear)  
+    {  
+        r_front=r_rear=NULL;  
+        
+    } 
+    else  
+    {  
+        r_front = r_front->next;  
+        r_rear->next = r_front;  
+        
+    }  
+   
+
+	pthread_mutex_unlock(&receive_queue_mutex);
+	return temp;
+}
+
+void status_enqueue(int sockfd,int reqID) 
+{
+	struct statusq *node = new struct statusq;
+	node->requestid=reqID;
+	node->sockfd = sockfd;
+	node->next = NULL;
+	if (s_front == NULL) 
+	{
+		s_front = s_rear = node;
+		pthread_cond_signal(&status_cond);
+	} 
+	else
+	{
+		s_rear->next = node;
+		s_rear = node;
+	}
+
+}
+
+struct statusq* status_dequeue()  
+{  
+	pthread_mutex_lock(&status_queue_mutex);
+
+    struct statusq *temp;   
+	
+    while(s_front == NULL)
+    {  
+		pthread_cond_wait(&status_cond,&status_queue_mutex);
+          
+    }  
+			
+    
+    temp = s_front;  
+	if(s_front==s_rear)  
+    {  
+        s_front=s_rear=NULL;  
+        
+    }  
+    else  
+    {  
+        s_front=s_front->next;  
+        s_rear->next=s_front;  
+         
+    }  
+   
+	pthread_mutex_unlock(&status_queue_mutex);
+	return temp;
+}
+
+void process_enqueue(int sockfd,int reqID) 
+{
+	struct processq *node = new struct processq;
+	node->requestid=reqID;
+	node->sockfd = sockfd;
+	node->next = NULL;
+	if (p_front == NULL) 
+	{
+		p_front = p_rear = node;
+		pthread_cond_signal(&process_cond);
+	} 
+	else
+	{
+		p_rear->next = node;
+		p_rear = node;
+	}
+}
+
+struct processq* process_dequeue()  
+{  
+	pthread_mutex_lock(&process_queue_mutex);
+
+    struct processq *temp;   
+
+    while(p_front == NULL)
+    {  
+		pthread_cond_wait(&process_cond,&process_queue_mutex);
+       
+    }  
+    
+    temp = p_front;  
+	if(p_front==p_rear)  
+    {  
+        p_front=p_rear=NULL;  
+       
+    }  
+    else  
+    {  
+        p_front=p_front->next;  
+        p_rear->next=p_front;  
+        
+    }  
+   
+
+	pthread_mutex_unlock(&process_queue_mutex);
+	return temp;
 }
 void sresult(int newsockfd,int fp,int a,char * buffer)
 {
@@ -109,11 +201,4 @@ void sresult(int newsockfd,int fp,int a,char * buffer)
 	}
 }
 
-void *measure_queue_size()
-{
-	while(1)
-	{
-		printf("Queue size is:%d\n",qsize);
-		sleep(1);
-	}
-}
+
