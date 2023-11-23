@@ -1,5 +1,53 @@
 #include "funtion_declarations.h"
 
+void *receive_file(void *arg)
+{
+	while(1)
+	{
+		struct receiveQueue* t = receive_dequeue(); 
+		int newsockfd = t->sockfd;
+		int reqID = t->requestid;
+		
+		char buffer[BUFFER_SIZE];
+		char grade_file[50];
+
+		sprintf(grade_file,"gradeFile%d.c",reqID);
+
+		int file_size = 0;
+		int n = read(newsockfd,&file_size,sizeof(file_size));
+		if (n < 0)
+			error("ERROR reading from socket");
+
+		int newGradeFd = open(grade_file,O_RDWR | O_CREAT,S_IRUSR | S_IWUSR | S_IXUSR);
+		if (newGradeFd < 0)
+			error("ERROR opening file");
+
+		memset(buffer, 0, BUFFER_SIZE);
+		while (file_size > 0)
+		{	
+			int readBytes = read(newsockfd, buffer, BUFFER_SIZE);
+			if (readBytes < 0)
+				error("ERROR reading from socket");
+
+			int wroteBytes = write(newGradeFd,buffer,readBytes);
+
+			if (wroteBytes < 0)
+				error("ERROR writing to file");
+
+			file_size -= readBytes;
+
+			memset(buffer, 0, BUFFER_SIZE);
+		}
+		cout << endl;
+		process_enqueue(newsockfd,reqID);
+		request_status_map[reqID].first = 0;
+
+		write(newsockfd,&reqID,sizeof(reqID));
+		close(newGradeFd);
+	}
+	
+}
+
 
 void *gradeTheFile(void* f)
 {
