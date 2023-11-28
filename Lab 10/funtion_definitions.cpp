@@ -282,3 +282,72 @@ void *checkStatus(void *f)
 	
 	return NULL;
 }
+
+void *storedata(void *f)
+{
+	while(1)
+	{
+		//storing data into the queue
+	
+		FILE* file = fopen("processq_data.txt", "w");
+		if (!file) {
+			error("Error opening processq_data file");
+			return NULL;
+		}
+		pthread_mutex_lock(&process_queue_mutex);
+		processq* current = p_front;
+		while (current != nullptr) {
+			fprintf(file, "%d\n", current->requestid);
+			current = current->next;
+		}
+		pthread_mutex_unlock(&process_queue_mutex);
+		fclose(file);
+		
+		//Storing the data into the hash table
+		FILE* f = fopen("hashtable_data.txt", "w");
+		if (!f) {
+			error("Error opening hashtable_data file");
+			return NULL;
+		}
+		for (const auto& entry : request_status_map) {
+			fprintf(f, "%d %d %d\n", entry.first, entry.second.first, entry.second.second);
+		}
+		fclose(f);
+		sleep(5);
+	}
+	return NULL;
+	
+}
+
+void retrivedata()
+{
+	FILE* f1 = fopen("processq_data.txt", "r");
+
+    if (!f1) {
+        error("Error opening processq_data file for reading");
+        return;
+    }
+
+    int value;
+
+    while (fscanf(f1, "%d", &value) == 1) 
+	{
+		process_enqueue(value);
+    }
+
+    fclose(f1);
+
+	FILE* f2 = fopen("hashtable_data.txt", "r");
+    if (!f2) 
+	{
+        error("Error opening hashtable_data file for reading");
+        return;
+    }
+    int key, value1, value2;
+    while (fscanf(f2, "%d %d %d", &key, &value1, &value2) == 3) {
+        request_status_map[key] = {value1, value2};
+    }
+    fclose(f2);
+
+
+}
