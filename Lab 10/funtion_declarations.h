@@ -55,6 +55,7 @@ void sresult(int newsockfd, int fp, int a, char *buffer);
 
 void error(const char *msg);
 
+void *checkStatus(void *f);
 struct receiveQueue{
 	int sockfd;
 	int requestid;

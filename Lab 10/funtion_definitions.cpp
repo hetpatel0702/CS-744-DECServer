@@ -199,3 +199,91 @@ int generateUniqueID()
 	return timeInSeconds;
 }
 
+void *checkStatus(void *f)
+{
+	// thread_argument* thread = static_cast<thread_argument*>(f);
+	struct statusq* x = status_dequeue();
+	int reqID= x->requestid;
+	int sockfd = x->sockfd;
+
+	if(request_status_map.find(reqID) != request_status_map.end())
+	{
+		if(request_status_map[reqID].first==0)
+		{
+			struct processq* temp=p_front;
+			
+			int count=0;
+			pthread_mutex_lock(&receive_queue_mutex);
+			while(temp && temp->requestid!=reqID)
+			{
+				temp=temp->next;
+				count++;
+			}
+			pthread_mutex_unlock(&receive_queue_mutex);
+			count++;
+			
+			int x = 0;
+		// cout << "yoyo" << endl;
+			write(sockfd,&x,sizeof(x));
+			write(sockfd,&count,sizeof(count));
+			
+		}
+		else if(request_status_map[reqID].first==1)
+		{
+			int x = 1;
+			write(sockfd,&x,sizeof(x));
+			// write(sockfd,"Request Processing has Started!",sizeof("Processing"));
+		}
+		else
+		{
+			int x = 2;
+			write(sockfd,&x,sizeof(x));
+			// write(sockfd,"Processing is Completed!",sizeof("Completed"));
+			
+			char buffer[BUFFER_SIZE];
+			
+			
+			if(request_status_map[reqID].second == 0)
+			{
+				string Cerror_file = "Cerror"+to_string(reqID)+".txt";
+
+				FILE* fp = fopen(Cerror_file.c_str(),"rb");
+				filesize(fp,sockfd);
+				int cerror = open(Cerror_file.c_str(),O_RDONLY);
+				sresult(sockfd,cerror,0,buffer);
+			}
+			else if(request_status_map[reqID].second == 1)
+			{
+				//file size is not called here and same to pass also
+				int x=0;
+				write(sockfd,&x,sizeof(x));
+				sresult(sockfd,-1,1,buffer);
+			}	
+			else if(request_status_map[reqID].second == 2)
+			{
+				string diff_file = "diff"+to_string(reqID)+".txt";
+				FILE* fp = fopen(diff_file.c_str(),"rb");
+				filesize(fp,sockfd);
+				
+				int diffFd = open(diff_file.c_str(),O_RDONLY);
+				if(diffFd < 0)
+					error("ERROR opening file");
+				sresult(sockfd,diffFd,2,buffer);
+			}
+			else
+			{
+				int x=0;
+				write(sockfd,&x,sizeof(x));
+				sresult(sockfd,-1,3,buffer);
+			}
+
+		}
+	}
+	else
+	{
+		int x = 3;
+		write(sockfd,&x,sizeof(x));
+	}
+	
+	return NULL;
+}
