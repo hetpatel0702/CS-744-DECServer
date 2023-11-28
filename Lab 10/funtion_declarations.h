@@ -39,7 +39,7 @@ void status_enqueue(int sockfd,int reqID);
 
 struct statusq* status_dequeue();
 
-void process_enqueue(int sockfd,int reqID);
+void process_enqueue(int reqID);
 
 struct processq* process_dequeue();
 
@@ -71,7 +71,7 @@ struct statusq
 
 struct processq
 {
-	int sockfd;
+	// int sockfd;
 	int requestid;
 	struct processq* next;
 };

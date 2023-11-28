@@ -39,7 +39,7 @@ void *receive_file(void *arg)
 			memset(buffer, 0, BUFFER_SIZE);
 		}
 		cout << endl;
-		process_enqueue(newsockfd,reqID);
+		process_enqueue(reqID);
 		request_status_map[reqID].first = 0;
 
 		write(newsockfd,&reqID,sizeof(reqID));
@@ -54,14 +54,10 @@ void *gradeTheFile(void* f)
 	while(1)
 	{
 		struct processq* t = process_dequeue();
-		int newsockfd = t->sockfd;
+		// int newsockfd = t->sockfd;
 		int reqID = t->requestid;
 		
 		request_status_map[reqID].first=1;
-		
-		if (newsockfd < 0) {
-			error("ERROR on accept");
-		}
 	
 		char buffer[BUFFER_SIZE];
 		char Cerror_file[50];
@@ -127,7 +123,7 @@ void *gradeTheFile(void* f)
 				
 			}
 		}
-		close(newsockfd);
+		// close(newsockfd);
 
 		request_status_map[reqID].first=2;
 	}

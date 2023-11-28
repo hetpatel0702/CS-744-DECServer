@@ -100,11 +100,10 @@ struct statusq* status_dequeue()
 	return temp;
 }
 
-void process_enqueue(int sockfd,int reqID) 
+void process_enqueue(int reqID) 
 {
 	struct processq *node = new struct processq;
 	node->requestid=reqID;
-	node->sockfd = sockfd;
 	node->next = NULL;
 	if (p_front == NULL) 
 	{
@@ -201,7 +200,6 @@ int generateUniqueID()
 
 void *checkStatus(void *f)
 {
-	// thread_argument* thread = static_cast<thread_argument*>(f);
 	struct statusq* x = status_dequeue();
 	int reqID= x->requestid;
 	int sockfd = x->sockfd;
@@ -223,7 +221,6 @@ void *checkStatus(void *f)
 			count++;
 			
 			int x = 0;
-		// cout << "yoyo" << endl;
 			write(sockfd,&x,sizeof(x));
 			write(sockfd,&count,sizeof(count));
 			
@@ -232,13 +229,11 @@ void *checkStatus(void *f)
 		{
 			int x = 1;
 			write(sockfd,&x,sizeof(x));
-			// write(sockfd,"Request Processing has Started!",sizeof("Processing"));
 		}
 		else
 		{
 			int x = 2;
 			write(sockfd,&x,sizeof(x));
-			// write(sockfd,"Processing is Completed!",sizeof("Completed"));
 			
 			char buffer[BUFFER_SIZE];
 			

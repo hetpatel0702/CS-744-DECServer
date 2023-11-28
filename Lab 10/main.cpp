@@ -104,7 +104,6 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-
 			int id;
 			read(*newsockfd,&id,sizeof(id));
 			status_enqueue(*newsockfd, id);
