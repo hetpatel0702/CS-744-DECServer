@@ -1,10 +1,8 @@
-#include "funtion_declarations.h"
+#include "function_declarations.h"
 #include "handle_client.cpp"
-#include "funtion_definitions.cpp"
+#include "function_definitions.cpp"
 
-int queue[MAX_QUEUE_SIZE];
-
-unordered_map<int, pair<int,int>> request_status_map;
+unordered_map<long long int, pair<int,int>> request_status_map;
 
 pthread_mutex_t receive_queue_mutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t receive_cond=PTHREAD_COND_INITIALIZER;
@@ -50,15 +48,37 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
-    listen(sockfd, MAX_QUEUE_SIZE);
+    listen(sockfd, 500);
 
     clilen = sizeof(cli_addr);
 
-    int thread_pool = atoi(argv[2]);
-	
-    pthread_t thread[thread_pool];
+    int total_threads = atoi(argv[2]);
+	int thread_pool1,thread_pool2;
 
-    for (int i = 0; i < thread_pool; i++) 
+    if(total_threads % 2 == 0)
+    {
+        thread_pool1 = total_threads / 2;
+        thread_pool2 = total_threads / 2;
+    }    
+    else 
+    {
+         thread_pool1 = total_threads / 2;       
+         thread_pool2 = total_threads / 2 + 1;       
+    }
+
+    pthread_t receive_thread[thread_pool1];
+
+	for (int i = 0; i < thread_pool1; i++) 
+	{
+        if (pthread_create(&receive_thread[i], nullptr, receive_file, nullptr) != 0)
+		{
+            fprintf(stderr, "Error Creating Thread\n");
+        }
+    }
+
+    pthread_t thread[thread_pool2];
+
+    for (int i = 0; i < thread_pool2; i++) 
 	{
         if (pthread_create(&thread[i], nullptr, gradeTheFile, NULL) != 0)
 		{
@@ -66,15 +86,13 @@ int main(int argc, char *argv[])
         }
     }
 
-	pthread_t receive_thread[10];
-
-	for (int i = 0; i < 10; i++) 
-	{
-        if (pthread_create(&receive_thread[i], nullptr, receive_file, nullptr) != 0)
-		{
-            fprintf(stderr, "Error Creating Thread\n");
-        }
+    pthread_t store_data;
+    if (pthread_create(&store_data, nullptr, storedata, NULL) != 0)
+    {
+        fprintf(stderr, "Error Creating Thread for checking status\n");
     }
+
+    retrivedata();
 
     while (true) 
 	{
@@ -93,18 +111,17 @@ int main(int argc, char *argv[])
             free(newsockfd);
             continue;
         }
-		
 		bool flag;
 		read(*newsockfd,&flag,sizeof(flag));
 
-		if(flag==0)
+		if(flag==1)
 		{
-			int id = generateUniqueID();
+			long long int id = generateUniqueID();
 			receive_enqueue(*newsockfd, id);
 		}
 		else
 		{
-			int id;
+			long long int id;
 			read(*newsockfd,&id,sizeof(id));
 			status_enqueue(*newsockfd, id);
 			
@@ -113,11 +130,8 @@ int main(int argc, char *argv[])
 			{
 				fprintf(stderr, "Error Creating Thread for checking status\n");
 			}
-		}
-
-        
+		} 
     }
-
     return 0;
 }
 

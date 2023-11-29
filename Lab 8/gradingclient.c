@@ -13,11 +13,11 @@
 
 #define BUFFER_SIZE 128
 
+double totalTime = 0;
+double Tsend = 0, Trcv = 0;
 int successfulRes = 0;
 int numTimeouts = 0;
 int numErrors = 0;
-double Tsend = 0, Trcv = 0;
-double totalTime = 0;
 
 void error(char *msg,int sockfd,int sleepTime,bool timeout) 
 {
@@ -38,7 +38,6 @@ void error(char *msg,int sockfd,int sleepTime,bool timeout)
     else
         numErrors++;
 }
-
 
 int main(int argc, char *argv[]) {
     int sockfd, portno, n;
@@ -65,13 +64,14 @@ int main(int argc, char *argv[]) {
 
     double start, end;
     double avgTime = 0;
+    
 
     if (gettimeofday(&tv, NULL) == 0) {
         start = (double) tv.tv_sec + tv.tv_usec / 1000000.0;
     }
 
     int loopNum2 = loopNum;
-    for(int i=0;i<loopNum;i++)
+    for(int i=0;i<loopNum;i++) 
     {
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -116,11 +116,6 @@ int main(int argc, char *argv[]) {
         int file_size = ftell(fp);
         fclose(fp);
 
-        if (gettimeofday(&tv, NULL) == 0) 
-        {
-            Tsend = (double) tv.tv_sec + (double)tv.tv_usec / 1000000.0;
-        }
-        
         n = write(sockfd,&file_size,sizeof(file_size));
         if (n < 0)
         {
@@ -132,6 +127,11 @@ int main(int argc, char *argv[]) {
         
         bzero(buffer,sizeof(buffer));
         int readBytes;
+
+        if (gettimeofday(&tv, NULL) == 0) 
+        {
+            Tsend = (double) tv.tv_sec + (double)tv.tv_usec / 1000000.0;
+        }
 
         int f1 = 0;
         while ((readBytes = read(gradeFd, buffer , sizeof(buffer))) > 0) 
@@ -147,13 +147,13 @@ int main(int argc, char *argv[]) {
         }
         if(f1)
             continue;
-            
+
         int file=0,flag=0;
         int n=recv(sockfd,&file,sizeof(file),0);
-        if (n < 0)
-        {
+        if (n < 0){
             if (errno == EAGAIN || errno == EWOULDBLOCK) 
             {
+                // fprintf(stderr,"Received timeout.\n");
                 error("Received Timeout",sockfd,sleepTime,1);
             }
             else
@@ -221,6 +221,7 @@ int main(int argc, char *argv[]) {
         {
             Trcv = (double) tv.tv_sec + (double)tv.tv_usec / 1000000.0;
         }
+
         if (!flag)
             successfulRes++;
         
@@ -239,12 +240,12 @@ int main(int argc, char *argv[]) {
     avgTime = (1.0 * totalTime) / successfulRes;
     double totalLoopTime = end - start;
 
+
     if(successfulRes == 0)
-    {
         printf("\nAverage Response Time:%lf\n", totalLoopTime/loopNum2);    
-    }
     else
         printf("\nAverage Response Time:%lf\n", avgTime);
+    
     printf("Successful Responses:%d\n", successfulRes);
     printf("Total Time:%lf\n", totalLoopTime);
     
@@ -252,11 +253,11 @@ int main(int argc, char *argv[]) {
         printf("Throughput:%lf\n",0.0);
     else
         printf("Throughput:%lf\n", successfulRes / totalTime);
-    
+
     printf("Request Sent Rate:%lf\n",1.0*loopNum2/totalLoopTime);
     printf("Successful Request Rate:%lf\n",1.0*successfulRes/totalLoopTime);
     printf("Timeout Rate:%lf\n",1.0*numTimeouts/totalLoopTime);
     printf("Error Rate:%lf\n",1.0*(numErrors)/totalLoopTime);
-    printf("Timeouts:%d\n",numTimeouts);
+
     return 0;
 }

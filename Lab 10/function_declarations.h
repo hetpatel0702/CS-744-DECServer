@@ -15,10 +15,8 @@
 using namespace std;
 
 #define BUFFER_SIZE 128
-#define MAX_QUEUE_SIZE 500
 
-
-extern unordered_map<int, pair<int,int>> request_status_map;
+extern unordered_map<long long int, pair<int,int>> request_status_map;
 
 extern pthread_mutex_t receive_queue_mutex;
 extern pthread_cond_t receive_cond;
@@ -29,21 +27,19 @@ extern pthread_cond_t status_cond;
 extern pthread_mutex_t process_queue_mutex;
 extern pthread_cond_t process_cond;
 
-extern int queue[MAX_QUEUE_SIZE];
-
-void receive_enqueue(int newsockfd, int reqID);
+void receive_enqueue(int newsockfd,long long int reqID);
 
 struct receiveQueue* receive_dequeue();
 
-void status_enqueue(int sockfd,int reqID);
+void status_enqueue(int sockfd,long long int reqID);
 
 struct statusq* status_dequeue();
 
-void process_enqueue(int reqID);
+void process_enqueue(long long int reqID);
 
 struct processq* process_dequeue();
 
-int generateUniqueID();
+long long int generateUniqueID();
 
 void filesize(FILE *fp, int newsockfd);
 
@@ -61,21 +57,20 @@ void retrivedata();
 void *checkStatus(void *f);
 struct receiveQueue{
 	int sockfd;
-	int requestid;
+	long long int requestid;
 	struct receiveQueue * next;
 };
 
 struct statusq
 {
 	int sockfd;
-	int requestid;
+	long long int requestid;
 	struct statusq* next;
 };
 
 struct processq
 {
-	// int sockfd;
-	int requestid;
+	long long int requestid;
 	struct processq* next;
 };
 

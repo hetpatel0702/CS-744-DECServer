@@ -53,7 +53,9 @@ stop_capture() {
 
 # Function to calculate the average of the "id" column from vmstat data
 calculate_cpu_utilization() {
+    # Extract the "id" column from numeric rows in vmstat data
     cpu_utilization=$(awk '/^[0-9 \t]+$/ {sum+=$15; count++} END {print sum/count}' vmstat_snapshots.txt)
+
 }
 
 # Function to calculate the average value for a specific column in a file
@@ -69,6 +71,7 @@ calculate_average() {
 }
 
 
+# Run the analysis for different sizes of clients
 for i in ${numClient}; do
     # Start capturing statistics
     capture_stats &
@@ -80,6 +83,11 @@ for i in ${numClient}; do
     stop_capture
     capture_running=true
 
+    # Analyze the captured data to find CPU utilization and thread count
+    # You can write the analysis logic here and store the results in separate files
+
+    # Append the results to your throughput and response time data files
+    # Call the function to calculate CPU utilization and assign it to the variable
      calculate_cpu_utilization
      # Call the function to calculate the average
      calculate_average

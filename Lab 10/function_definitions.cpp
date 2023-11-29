@@ -1,4 +1,4 @@
-#include "funtion_declarations.h"
+#include "function_declarations.h"
 
 void error(const char *msg) 
 {
@@ -13,7 +13,7 @@ void filesize(FILE *fp, int newsockfd)
     write(newsockfd, &file_size, sizeof(file_size));
 }
 
-void receive_enqueue(int newsockfd, int reqID) 
+void receive_enqueue(int newsockfd, long long int reqID) 
 {
 	struct receiveQueue *node = new struct receiveQueue;
 	node->sockfd = newsockfd;
@@ -48,15 +48,14 @@ struct receiveQueue* receive_dequeue()
     }  
     else  
     {  
-        r_front = r_front->next;  
-        r_rear->next = r_front;   
+        r_front = r_front->next;    
     }  
 
 	pthread_mutex_unlock(&receive_queue_mutex);
 	return temp;
 }
 
-void status_enqueue(int sockfd,int reqID) 
+void status_enqueue(int sockfd,long long int reqID) 
 {
 	struct statusq *node = new struct statusq;
 	node->requestid=reqID;
@@ -92,15 +91,14 @@ struct statusq* status_dequeue()
     }  
     else  
     {  
-        s_front=s_front->next;  
-        s_rear->next=s_front;  
+        s_front=s_front->next;   
     }  
    
 	pthread_mutex_unlock(&status_queue_mutex);
 	return temp;
 }
 
-void process_enqueue(int reqID) 
+void process_enqueue(long long int reqID) 
 {
 	struct processq *node = new struct processq;
 	node->requestid=reqID;
@@ -134,8 +132,7 @@ struct processq* process_dequeue()
     }  
     else  
     {  
-        p_front=p_front->next;  
-        p_rear->next=p_front;   
+        p_front=p_front->next;   
     }  
 	pthread_mutex_unlock(&process_queue_mutex);
 	return temp;
@@ -188,20 +185,23 @@ void sresult(int newsockfd, int fp, int a, char *buffer)
     }
 }
 
-int generateUniqueID()
+long long generateUniqueID()
 {
-	auto currentTime = chrono::system_clock::now();
-	auto durationSinceEpoch = currentTime.time_since_epoch();
-	auto secondsSinceEpoch = chrono::duration_cast<chrono::seconds>(durationSinceEpoch);
+    auto currentTime = chrono::system_clock::now();
+    auto durationSinceEpoch = currentTime.time_since_epoch();
+    auto secondsSinceEpoch = chrono::duration_cast<chrono::seconds>(durationSinceEpoch);
+    auto microsecondsComponent = chrono::duration_cast<chrono::microseconds>(durationSinceEpoch);
 
-	time_t timeInSeconds = secondsSinceEpoch.count();
-	return timeInSeconds;
+    long long timeInSeconds = secondsSinceEpoch.count();
+    long long microseconds = microsecondsComponent.count() % 1000000; // Get the microseconds component
+
+    return timeInSeconds * 1000000 + microseconds; // Combine seconds and microseconds for a unique ID
 }
 
 void *checkStatus(void *f)
 {
 	struct statusq* x = status_dequeue();
-	int reqID= x->requestid;
+	long long int reqID= x->requestid;
 	int sockfd = x->sockfd;
 
 	if(request_status_map.find(reqID) != request_status_map.end())
@@ -236,7 +236,6 @@ void *checkStatus(void *f)
 			write(sockfd,&x,sizeof(x));
 			
 			char buffer[BUFFER_SIZE];
-			
 			
 			if(request_status_map[reqID].second == 0)
 			{
@@ -287,8 +286,6 @@ void *storedata(void *f)
 {
 	while(1)
 	{
-		//storing data into the queue
-	
 		FILE* file = fopen("processq_data.txt", "w");
 		if (!file) {
 			error("Error opening processq_data file");
@@ -297,7 +294,8 @@ void *storedata(void *f)
 		pthread_mutex_lock(&process_queue_mutex);
 		processq* current = p_front;
 		while (current != nullptr) {
-			fprintf(file, "%d\n", current->requestid);
+
+			fprintf(file, "%lld\n", current->requestid);
 			current = current->next;
 		}
 		pthread_mutex_unlock(&process_queue_mutex);
@@ -310,10 +308,10 @@ void *storedata(void *f)
 			return NULL;
 		}
 		for (const auto& entry : request_status_map) {
-			fprintf(f, "%d %d %d\n", entry.first, entry.second.first, entry.second.second);
+			fprintf(f, "%lld %d %d\n", entry.first, entry.second.first, entry.second.second);
 		}
 		fclose(f);
-		sleep(5);
+		sleep(1);
 	}
 	return NULL;
 	
@@ -328,9 +326,9 @@ void retrivedata()
         return;
     }
 
-    int value;
+    long long int value;
 
-    while (fscanf(f1, "%d", &value) == 1) 
+    while (fscanf(f1, "%lld", &value) == 1) 
 	{
 		process_enqueue(value);
     }
@@ -343,11 +341,15 @@ void retrivedata()
         error("Error opening hashtable_data file for reading");
         return;
     }
-    int key, value1, value2;
-    while (fscanf(f2, "%d %d %d", &key, &value1, &value2) == 3) {
+    long long int key; 
+	int value1, value2;
+    while (fscanf(f2, "%lld %d %d", &key, &value1, &value2) == 3) {
+		if(value1 == 1)
+		{
+			value1 = 0;
+			process_enqueue(key);
+		}
         request_status_map[key] = {value1, value2};
     }
     fclose(f2);
-
-
 }
