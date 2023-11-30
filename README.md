@@ -1,5 +1,7 @@
 # CS-744-DECServer
 
+[**Github Repository link**](https://github.com/hetpatel0702/CS-744-DECServer.git)
+
 ## Version 1 (Single Threaded Server)
 
 - **Performance Testing for Version 1**
@@ -38,7 +40,7 @@
 
 	- Run the server
 
-			./server <port_number> (port number set in the script is 7000)
+			./server <port_number> (port number set in the analysis.sh is 7000)
 
 	- Run the analysis.sh
 
@@ -61,7 +63,7 @@
 
 	- Run the server
 
-			./server <port_number> <thread_pool_size> (port number set in the script is 7000)
+			./server <port_number> <thread_pool_size> (port number set in the analysis.sh is 7000)
 
 	- Run the analysis.sh
 
@@ -73,17 +75,13 @@
 
 - **Performance Testing for version 4**
 
-	- For Compiling the server
-
-			g++ main.c -o server
+	- For compiling client and server
 			
-	- For Compiling the client
-
-			g++ gradingclient.cpp -o client
+			make
 
 	- Run the server
 
-			./server <port_number> <thread_pool_size> (port number set in the script is 7000)
+			./server <port_number> <thread_pool_size> (port number set in the analysis.sh is 7000)
 
 	- Run the analysis.sh
 

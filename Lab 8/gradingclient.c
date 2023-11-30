@@ -261,10 +261,10 @@ int main(int argc, char *argv[]) {
     if(successfulRes == 0)
         printf("Throughput:%lf\n",0.0);
     else
-        printf("Throughput:%lf\n", successfulRes / totalTime);
+        printf("Throughput:%lf\n", loopNum2 / totalTime);
 
     printf("Request Sent Rate:%lf\n",1.0*loopNum2/totalLoopTime);
-    printf("Successful Request Rate:%lf\n",1.0*successfulRes/totalLoopTime);
+    printf("Successful Request Rate:%lf\n",1.0*successfulRes/totalTime);
     printf("Timeout Rate:%lf\n",1.0*numTimeouts/totalLoopTime);
     printf("Error Rate:%lf\n",1.0*(numErrors)/totalLoopTime);
 

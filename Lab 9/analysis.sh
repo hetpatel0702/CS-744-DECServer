@@ -92,7 +92,7 @@ done
 
 
 # Plot the results
-cat throughput_data.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Overall Throughtput vs No. of clients" -X "No. of Clients" -Y "Throughput" -r 0.25 > ./throughput.png
+cat throughput_data.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Overall Throughtput vs No. of clients" -X "No. of Clients" -Y "Throughput (req/sec)" -r 0.25 > ./throughput.png
 
 cat response_time_data.txt | graph -T png --bitmap-size "1400x1400" -g 3 -L "Avg. Response Time vs No. of clients " -X "No. of Clients" -Y "Avg. Response Time(in s)" -r 0.25 > ./response_time.png
 

@@ -250,7 +250,7 @@ void *checkStatus(void *f)
 			write(sockfd,&x,sizeof(x));
 			
 			char buffer[BUFFER_SIZE];
-			// check if the status result is 0
+			//Compile Error
 			if(request_status_map[reqID].second == 0)
 			{
 				string Cerror_file = "Cerror"+to_string(reqID)+".txt";
@@ -260,15 +260,14 @@ void *checkStatus(void *f)
 				int cerror = open(Cerror_file.c_str(),O_RDONLY);
 				sresult(sockfd,cerror,0,buffer);
 			}
-			// check if the status result is 1
+			//Runtime Error
 			else if(request_status_map[reqID].second == 1)
 			{
-				//file size is not called here and same to pass also
 				int x=0;
 				write(sockfd,&x,sizeof(x));
 				sresult(sockfd,-1,1,buffer);
 			}	
-			// check if the status result is 2
+			//Output Error
 			else if(request_status_map[reqID].second == 2)
 			{
 				string diff_file = "diff"+to_string(reqID)+".txt";
@@ -280,6 +279,7 @@ void *checkStatus(void *f)
 					error("ERROR opening file");
 				sresult(sockfd,diffFd,2,buffer);
 			}
+			// Pass
 			else
 			{
 				int x=0;
