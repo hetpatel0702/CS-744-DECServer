@@ -13,7 +13,8 @@ void *receive_file(void *arg)
 		char buffer[BUFFER_SIZE];
 		char grade_file[50];
 
-		sprintf(grade_file,"gradeFile%lld.c",reqID);
+		sprintf(grade_file, "Student Files/gradeFile%lld.c", reqID);
+
 
 		int file_size = 0;
 		// read the file size
@@ -74,15 +75,16 @@ void *gradeTheFile(void* f)
 		char run_command[150];
 		char diff_command[150];
 		char delete_files[150];
+		
 		// create the file names
 		sprintf(output_file,"output%lld.txt",reqID);
 		sprintf(Rerror_file,"Rerror%lld.txt",reqID);
-		sprintf(Cerror_file,"Cerror%lld.txt",reqID);
-		sprintf(diff_file,"diff%lld.txt",reqID);
-		sprintf(grade_file,"gradeFile%lld.c",reqID);
-		sprintf(grade_file_exe,"file%lld",reqID);
+		sprintf(Cerror_file,"Compile Error/Cerror%lld.txt",reqID);
+		sprintf(diff_file,"Output Error/diff%lld.txt",reqID);
+		sprintf(grade_file,"Student Files/gradeFile%lld.c",reqID);
+		sprintf(grade_file_exe,"Executable/file%lld",reqID);
 		// compile command for the file
-		sprintf(compile_command,"gcc gradeFile%lld.c -o file%lld 2>Cerror%lld.txt",reqID,reqID,reqID);
+		sprintf(compile_command,"gcc \"Student Files/gradeFile%lld.c\" -o \"Executable/file%lld\" 2>\"Compile Error/Cerror%lld.txt\"",reqID,reqID,reqID);
 		// compile the file
 		int compiling = system(compile_command);
 		
@@ -93,13 +95,13 @@ void *gradeTheFile(void* f)
 		else
 		{
 			// run command for the file
-			sprintf(run_command,"./file%lld >output%lld.txt",reqID,reqID);
+			sprintf(run_command, "./\"Executable/file%lld\" > output%lld.txt", reqID, reqID);
 			// run the file
 			int runTheFile = system(run_command);
 
 			if(runTheFile != 0)
 			{
-				sprintf(delete_files,"rm file%lld Cerror%lld.txt",reqID,reqID);
+				sprintf(delete_files,"rm \"Executable/file%lld\" \"Compile Error/Cerror%lld.txt\"",reqID,reqID);
 				system(delete_files);
 
 				request_status_map[reqID].second = 1;
@@ -107,25 +109,25 @@ void *gradeTheFile(void* f)
 			else
 			{
 				// diff command for the file
-				sprintf(diff_command,"echo -n '1 2 3 4 5 6 7 8 9 10 ' | diff - output%lld.txt > diff%lld.txt",reqID,reqID);
+				sprintf(diff_command,"echo -n '1 2 3 4 5 6 7 8 9 10 ' | diff - output%lld.txt > \"Output Error/diff%lld.txt\"",reqID,reqID);
 				// check the difference
 				int difference = system(diff_command);
 				if(difference != 0)
 				{
-					sprintf(delete_files,"rm file%lld output%lld.txt Cerror%lld.txt",reqID,reqID,reqID);
-					system(delete_files);
+					 sprintf(delete_files,"rm \"Executable/file%lld\" output%lld.txt \"Compile Error/Cerror%lld.txt\"",reqID,reqID,reqID);
+					 system(delete_files);
 					request_status_map[reqID].second = 2;
 				}
 				else
 				{
 					request_status_map[reqID].second = 3;
-					sprintf(delete_files,"rm file%lld diff%lld.txt Cerror%lld.txt",reqID,reqID,reqID);
+					sprintf(delete_files,"rm \"Executable/file%lld\" output%lld.txt \"Output Error/diff%lld.txt\" \"Compile Error/Cerror%lld.txt\"",reqID,reqID,reqID,reqID);
 					system(delete_files);
 				}
 			}
 		}		
 		request_status_map[reqID].first=2;
-		sprintf(delete_files,"rm gradeFile%lld.c",reqID);
+		sprintf(delete_files,"rm \"Student Files/gradeFile%lld.c\"",reqID);
 		system(delete_files);
 	}
 }
