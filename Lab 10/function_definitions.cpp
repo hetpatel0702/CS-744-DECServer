@@ -1,10 +1,12 @@
 #include "function_declarations.h"
 
+// function to handle errors
 void error(const char *msg) 
 {
 	perror(msg);
 }
 
+// function to write file size
 void filesize(FILE *fp, int newsockfd)
 {
     fseek(fp, 0, SEEK_END);
@@ -13,6 +15,7 @@ void filesize(FILE *fp, int newsockfd)
     write(newsockfd, &file_size, sizeof(file_size));
 }
 
+// function to enqueue the request
 void receive_enqueue(int newsockfd, long long int reqID) 
 {
 	struct receiveQueue *node = new struct receiveQueue;
@@ -31,7 +34,7 @@ void receive_enqueue(int newsockfd, long long int reqID)
 		r_rear = node;
 	}
 }
-
+// function to dequeue the request
 struct receiveQueue* receive_dequeue()  
 {  
 	pthread_mutex_lock(&receive_queue_mutex);
@@ -55,6 +58,7 @@ struct receiveQueue* receive_dequeue()
 	return temp;
 }
 
+// function to assign status
 void status_enqueue(int sockfd,long long int reqID) 
 {
 	struct statusq *node = new struct statusq;
@@ -73,6 +77,7 @@ void status_enqueue(int sockfd,long long int reqID)
 	}
 }
 
+// function to dequeue status
 struct statusq* status_dequeue()  
 {  
 	pthread_mutex_lock(&status_queue_mutex);
@@ -98,6 +103,7 @@ struct statusq* status_dequeue()
 	return temp;
 }
 
+// function to enqueue process
 void process_enqueue(long long int reqID) 
 {
 	struct processq *node = new struct processq;
@@ -115,6 +121,7 @@ void process_enqueue(long long int reqID)
 	}
 }
 
+// function to dequeue process
 struct processq* process_dequeue()  
 {  
 	pthread_mutex_lock(&process_queue_mutex);
@@ -138,6 +145,7 @@ struct processq* process_dequeue()
 	return temp;
 }
 
+// function to grade the file
 void sresult(int newsockfd, int fp, int a, char *buffer) 
 {
     memset(buffer, 0, BUFFER_SIZE);
@@ -185,8 +193,10 @@ void sresult(int newsockfd, int fp, int a, char *buffer)
     }
 }
 
+// function to generate unique id
 long long generateUniqueID()
 {
+	// using chrono to get the current time and generating unique ID of it
     auto currentTime = chrono::system_clock::now();
     auto durationSinceEpoch = currentTime.time_since_epoch();
     auto secondsSinceEpoch = chrono::duration_cast<chrono::seconds>(durationSinceEpoch);
@@ -198,14 +208,16 @@ long long generateUniqueID()
     return timeInSeconds * 1000000 + microseconds; // Combine seconds and microseconds for a unique ID
 }
 
+// function to check the status
 void *checkStatus(void *f)
 {
 	struct statusq* x = status_dequeue();
 	long long int reqID= x->requestid;
 	int sockfd = x->sockfd;
-
+	// check if the request is in the request_status_map
 	if(request_status_map.find(reqID) != request_status_map.end())
 	{
+		// check if the status is 0
 		if(request_status_map[reqID].first==0)
 		{
 			struct processq* temp=p_front;
@@ -225,18 +237,20 @@ void *checkStatus(void *f)
 			write(sockfd,&count,sizeof(count));
 			
 		}
+		// check if the status is 1
 		else if(request_status_map[reqID].first==1)
 		{
 			int x = 1;
 			write(sockfd,&x,sizeof(x));
 		}
+		// check if the status is 2
 		else
 		{
 			int x = 2;
 			write(sockfd,&x,sizeof(x));
 			
 			char buffer[BUFFER_SIZE];
-			
+			// check if the status result is 0
 			if(request_status_map[reqID].second == 0)
 			{
 				string Cerror_file = "Cerror"+to_string(reqID)+".txt";
@@ -246,6 +260,7 @@ void *checkStatus(void *f)
 				int cerror = open(Cerror_file.c_str(),O_RDONLY);
 				sresult(sockfd,cerror,0,buffer);
 			}
+			// check if the status result is 1
 			else if(request_status_map[reqID].second == 1)
 			{
 				//file size is not called here and same to pass also
@@ -253,6 +268,7 @@ void *checkStatus(void *f)
 				write(sockfd,&x,sizeof(x));
 				sresult(sockfd,-1,1,buffer);
 			}	
+			// check if the status result is 2
 			else if(request_status_map[reqID].second == 2)
 			{
 				string diff_file = "diff"+to_string(reqID)+".txt";
@@ -282,6 +298,7 @@ void *checkStatus(void *f)
 	return NULL;
 }
 
+// function to store the data
 void *storedata(void *f)
 {
 	while(1)
@@ -317,6 +334,7 @@ void *storedata(void *f)
 	
 }
 
+// function to retrieve the data
 void retrivedata()
 {
 	FILE* f1 = fopen("processq_data.txt", "r");

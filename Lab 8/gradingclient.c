@@ -81,6 +81,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+	//used for implementing timeout
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(timeout)) < 0)
         {
             error("Setsockopt",sockfd,sleepTime,0);
@@ -111,11 +112,13 @@ int main(int argc, char *argv[]) {
 
         bzero(buffer, sizeof(buffer));
 
+	//calculating file size
         FILE* fp = fopen(sourceFile,"rb");
         fseek(fp,0,SEEK_END);
         int file_size = ftell(fp);
         fclose(fp);
 
+	//sending file size to server
         n = write(sockfd,&file_size,sizeof(file_size));
         if (n < 0)
         {
@@ -134,6 +137,8 @@ int main(int argc, char *argv[]) {
         }
 
         int f1 = 0;
+        
+        //reading from file and sending it to server
         while ((readBytes = read(gradeFd, buffer , sizeof(buffer))) > 0) 
         {   
             n = write(sockfd, buffer, readBytes);   
@@ -149,6 +154,8 @@ int main(int argc, char *argv[]) {
             continue;
 
         int file=0,flag=0;
+        
+        //receiving file size from server
         int n=recv(sockfd,&file,sizeof(file),0);
         if (n < 0){
             if (errno == EAGAIN || errno == EWOULDBLOCK) 
@@ -164,6 +171,7 @@ int main(int argc, char *argv[]) {
 
         if(file==0)
         {
+       	    //receiving error status from server( if it is pass)
             int reab=recv(sockfd,buffer,sizeof(buffer),0);
             if (reab == -1) 
             {
@@ -180,10 +188,12 @@ int main(int argc, char *argv[]) {
 	        }
             write(1,buffer,reab);
         }
-        else
+        else // receiving error status and file from server
         {
             int readb,f2=0;
             file+=16;
+            
+            //receving file from server
             while(file>0)
             {
                 readb=recv(sockfd,buffer,sizeof(buffer),0);

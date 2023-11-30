@@ -1,5 +1,6 @@
 #include "funtion_declarations.h"
 
+//function to grade the file
 void* gradeTheFile()
 {
 	while(1)
@@ -31,6 +32,8 @@ void* gradeTheFile()
 		sprintf(grade_file_exe,"file%lu",threadID);
 
 		int file_size = 0;
+		
+		//reading file size 
 		int n = read(newsockfd,&file_size,sizeof(file_size));
 		if (n < 0)
 			error("ERROR reading from socket");
@@ -42,6 +45,7 @@ void* gradeTheFile()
 		bzero(buffer,BUFFER_SIZE);
 		while (file_size > 0)
 		{	
+			//reading the file data 
 			int readBytes = read(newsockfd, buffer, BUFFER_SIZE);
 			if (readBytes < 0)
 				error("ERROR reading from socket");
@@ -59,6 +63,7 @@ void* gradeTheFile()
 		sprintf(compile_command,"gcc gradeFile%lu.c -o file%lu 2>Cerror%lu.txt",threadID,threadID,threadID);
 		int compiling = system(compile_command);
 		
+		//if compilation errror occurs
 		if(compiling != 0)
 		{
 			FILE* fp = fopen(Cerror_file,"rb");
@@ -75,11 +80,12 @@ void* gradeTheFile()
 			system(delete_files);
 			close(cerror);
 		}
-		else
+		else  //compilation success
 		{
 			sprintf(run_command,"./file%lu >output%lu.txt 2>Rerror%lu.txt",threadID,threadID,threadID);
 			int runTheFile = system(run_command);
 
+			//if runtime error occurs
 			if(runTheFile != 0)
 			{
 				FILE* fp = fopen(Rerror_file,"rb");
@@ -93,10 +99,12 @@ void* gradeTheFile()
 				sresult(newsockfd,rerror,1,buffer);
 				close(rerror);
 			}
-			else
+			else //no runtime error 
 			{
 				sprintf(diff_command,"echo -n '1 2 3 4 5 6 7 8 9 10 ' | diff - output%lu.txt > diff%lu.txt",threadID,threadID);
 				int difference = system(diff_command);
+				
+				//checking of actual output with generated output 
 				if(difference != 0)
 				{
 					FILE* fp = fopen(diff_file,"rb");
@@ -110,7 +118,7 @@ void* gradeTheFile()
 					sresult(newsockfd,diffFd,2,buffer);
 					close(diffFd);
 				}
-				else
+				else 
 				{
 					int x=0;
 					write(newsockfd,&x,sizeof(x));

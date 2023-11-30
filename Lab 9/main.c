@@ -46,15 +46,19 @@ int main(int argc, char *argv[])
 	int thread_pool=atoi(argv[2]);
 
 	pthread_t thread[thread_pool];
-    for(int i=0;i<thread_pool;i++)
-	{
+	
+	//Creating thread pool for grading client requested file
+   	 for(int i=0;i<thread_pool;i++)
+	  {
 		if(pthread_create(&thread[i], NULL, gradeTheFile, NULL) != 0)
 		{
 			fprintf(stderr,"Error Creating Thread\n");
 		}
-	}
+	  } 
 	
 	pthread_t worker_qsize;
+	
+	//Creating thread for measuring the queue size
 	if(pthread_create(&worker_qsize, NULL, measure_queue_size, NULL) != 0)
 	{
 		fprintf(stderr,"Error Creating Thread\n");

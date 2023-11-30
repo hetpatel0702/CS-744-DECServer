@@ -15,6 +15,8 @@
 void error(char *msg) {
   perror(msg);
 }
+
+//function to writing file size to socket
 void filesize(FILE *fp,int newsockfd)
 {
 	fseek(fp,0,SEEK_END);
@@ -22,6 +24,8 @@ void filesize(FILE *fp,int newsockfd)
 	fclose(fp);
 	write(newsockfd,&file_size,sizeof(file_size));
 }
+
+//function for sendig the result to client
 void sresult(int newsockfd,int fp,int a,char * buffer)
 {
 	bzero(buffer,BUFFER_SIZE);
@@ -61,6 +65,7 @@ void sresult(int newsockfd,int fp,int a,char * buffer)
 	}
 }
 
+//function for grading the client request
 void *gradeTheFile(void *f)
 {
 	int newsockfd = *(int *)f; 
@@ -93,6 +98,8 @@ void *gradeTheFile(void *f)
 		bzero(buffer, BUFFER_SIZE); //set buffer to zero
 		
 		int file_size = 0;
+		
+		//receiving file size from the client
 		int n = read(newsockfd,&file_size,sizeof(file_size));
 					
 		if (n < 0)
@@ -103,8 +110,11 @@ void *gradeTheFile(void *f)
 		bzero(buffer,BUFFER_SIZE);
         while (file_size > 0)
 		{	
+			
+			//receiving grading file data from the client
 			int readBytes = read(newsockfd, buffer, BUFFER_SIZE);
 			
+			//writing that data to a temporary file for grading
 			int wroteBytes = write(newGradeFd,buffer,readBytes);
 			file_size -= readBytes;
 
@@ -112,8 +122,10 @@ void *gradeTheFile(void *f)
 		}
 
 		sprintf(compile_command,"gcc gradeFile%lu.c -o file%lu 2>Cerror%lu.txt",threadID,threadID,threadID);
+		
 		int compiling = system(compile_command);
 		
+		//if compile error occur
 		if(compiling != 0)
 		{
 			
@@ -130,11 +142,12 @@ void *gradeTheFile(void *f)
 			system(delete_files);
 			close(cerror);
 		}
-		else
+		else //compile success
 		{
 			sprintf(run_command,"./file%lu >output%lu.txt 2>Rerror%lu.txt",threadID,threadID,threadID);
 			int runTheFile = system(run_command);
 
+			//if runtime error occur
 			if(runTheFile != 0)
 			{
 				char err[40] = "RUNTIME ERROR\n";
@@ -150,6 +163,8 @@ void *gradeTheFile(void *f)
 			{
 				sprintf(diff_command,"echo -n '1 2 3 4 5 6 7 8 9 10 ' | diff - output%lu.txt > diff%lu.txt",threadID,threadID);
 				int difference = system(diff_command);
+				
+				//actual output and generated output different
 				if(difference != 0)
 				{
 					FILE* fp = fopen(diff_file,"rb");
@@ -161,7 +176,7 @@ void *gradeTheFile(void *f)
 					sresult(newsockfd,diffFd,2,buffer);
 					close(diffFd);
 				}
-				else
+				else //PASS
 				{
 					int x=0;
 					write(newsockfd,&x,sizeof(x));
@@ -235,6 +250,7 @@ int main(int argc, char *argv[])
 
 		pthread_t thread;
 
+		//creating thread for grading file
 		if(pthread_create(&thread, NULL, gradeTheFile, (void *)newsockfd) != 0){
 			fprintf(stderr,"Error Creating Thread\n");
 		}

@@ -11,6 +11,7 @@ int numErrors = 0;
 double Tsend = 0, Trcv = 0;
 double totalTime = 0;
 
+//Handling error message
 void error(const char *msg,int sockfd,bool timeout) 
 {
     struct timeval tv;
@@ -45,6 +46,8 @@ int main(int argc, char *argv[])
     }
     char* type = argv[1];
     bool isNew;
+
+    //Checking the request either new or for status checking
     if(!strcmp(type,"new"))
     {
         isNew = true;
@@ -117,9 +120,11 @@ int main(int argc, char *argv[])
     n = write(sockfd,&isNew,sizeof(isNew));
 
     int flag=0;
-    if(isNew == false)
+    if(isNew == false) //if the request is for status checking
     {
         long long int reqID = stoll(sourceFile_or_reqID);
+
+        //writing requestid to socket 
         n = write(sockfd,&reqID,sizeof(reqID));
         if (n < 0)
         {
@@ -127,6 +132,8 @@ int main(int argc, char *argv[])
         }
 
         int resType;
+        
+        //reading the status of request from socket
         n = read(sockfd,&resType,sizeof(resType));
 
         if(resType == 0)
@@ -145,6 +152,8 @@ int main(int argc, char *argv[])
             cout << "Processing is completed!\nHere's Server Response: ";
 
             int received_file_size=0;
+
+            //Receiving file size 
             int n=recv(sockfd,&received_file_size,sizeof(received_file_size),0);
             if (n < 0)
             {
@@ -157,7 +166,7 @@ int main(int argc, char *argv[])
                     error("ERROR reading from socket",sockfd,0);
                 }
             }
-            if(received_file_size==0)
+            if(received_file_size==0) 
             {
                 int response=recv(sockfd,buffer,sizeof(buffer),0);
                 if (response == -1) 
@@ -211,13 +220,14 @@ int main(int argc, char *argv[])
             cout << "Request Not Found!" << endl;
         }
     }
-    else
+    else //if the request is new 
     {
         FILE* fp = fopen(sourceFile_or_reqID,"rb");
         fseek(fp,0,SEEK_END);
         int file_size = ftell(fp);
         fclose(fp);
 
+        //writing the file size to the socket
         n = write(sockfd,&file_size,sizeof(file_size));
         if (n < 0)
         {
@@ -230,6 +240,7 @@ int main(int argc, char *argv[])
         int readBytes;
 
         int f1 = 0;
+        //Reading file and writing on socket 
         while ((readBytes = read(gradeFd, buffer , sizeof(buffer))) > 0) 
         {   
             n = write(sockfd, buffer, readBytes);   
@@ -244,6 +255,8 @@ int main(int argc, char *argv[])
     
         long long int reqID;
         cout << "Your Request ID is: ";
+
+        //Received requestid from server 
         read(sockfd,&reqID,sizeof(reqID));
         cout << reqID << endl;
 
@@ -258,6 +271,8 @@ int main(int argc, char *argv[])
     {
         Trcv = (double) tv.tv_sec + (double)tv.tv_usec / 1000000.0;
     }
+
+    //Calculating number of successful responses
     if (!flag)
         successfulRes++;
     

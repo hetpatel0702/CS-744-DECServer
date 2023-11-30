@@ -19,6 +19,7 @@ int numErrors = 0;
 double Tsend = 0, Trcv = 0;
 double totalTime = 0;
 
+//Handling error message
 void error(char *msg,int sockfd,int sleepTime,bool timeout) 
 {
     struct timeval tv;
@@ -71,6 +72,8 @@ int main(int argc, char *argv[]) {
     }
 
     int loopNum2 = loopNum;
+    
+    //client iterate for loopNum times
     for(int i=0;i<loopNum;i++)
     {
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -80,7 +83,8 @@ int main(int argc, char *argv[]) {
             error("ERROR opening socket",sockfd,sleepTime,0);
             continue;
         }
-
+	
+	//setsockopt used for implementing timeout
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(timeout)) < 0)
         {
             error("Setsockopt",sockfd,sleepTime,0);
@@ -121,6 +125,7 @@ int main(int argc, char *argv[]) {
             Tsend = (double) tv.tv_sec + (double)tv.tv_usec / 1000000.0;
         }
         
+        //sending file size
         n = write(sockfd,&file_size,sizeof(file_size));
         if (n < 0)
         {
@@ -134,6 +139,8 @@ int main(int argc, char *argv[]) {
         int readBytes;
 
         int f1 = 0;
+        
+        //reading data from file and writing to socket
         while ((readBytes = read(gradeFd, buffer , sizeof(buffer))) > 0) 
         {   
             n = write(sockfd, buffer, readBytes);   
@@ -149,6 +156,8 @@ int main(int argc, char *argv[]) {
             continue;
             
         int file=0,flag=0;
+        
+        //receiving file size from server
         int n=recv(sockfd,&file,sizeof(file),0);
         if (n < 0)
         {
@@ -165,6 +174,8 @@ int main(int argc, char *argv[]) {
 
         if(file==0)
         {
+        
+            //receiving data from file
             int reab=recv(sockfd,buffer,sizeof(buffer),0);
             if (reab == -1) 
             {

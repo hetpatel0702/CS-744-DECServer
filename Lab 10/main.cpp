@@ -4,6 +4,8 @@
 
 unordered_map<long long int, pair<int,int>> request_status_map;
 
+//Initializing lock and condition variable
+
 pthread_mutex_t receive_queue_mutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t receive_cond=PTHREAD_COND_INITIALIZER;
 
@@ -68,6 +70,7 @@ int main(int argc, char *argv[])
 
     pthread_t receive_thread[thread_pool1];
 
+    //Creating thread pool for receiving file
 	for (int i = 0; i < thread_pool1; i++) 
 	{
         if (pthread_create(&receive_thread[i], nullptr, receive_file, nullptr) != 0)
@@ -78,6 +81,7 @@ int main(int argc, char *argv[])
 
     pthread_t thread[thread_pool2];
 
+    //Creating thread pool for grading client requested file
     for (int i = 0; i < thread_pool2; i++) 
 	{
         if (pthread_create(&thread[i], nullptr, gradeTheFile, NULL) != 0)
@@ -89,7 +93,7 @@ int main(int argc, char *argv[])
     pthread_t store_data;
     if (pthread_create(&store_data, nullptr, storedata, NULL) != 0)
     {
-        fprintf(stderr, "Error Creating Thread for checking status\n");
+        fprintf(stderr, "Error Creating Thread for storing data in file\n");
     }
 
     retrivedata();
@@ -116,6 +120,7 @@ int main(int argc, char *argv[])
 
 		if(flag==1)
 		{
+            //Calling generateUniqueID for generating id and pushed in the queue
 			long long int id = generateUniqueID();
 			receive_enqueue(*newsockfd, id);
 		}
@@ -126,6 +131,8 @@ int main(int argc, char *argv[])
 			status_enqueue(*newsockfd, id);
 			
 			pthread_t status_thread;
+            
+            //Creating status_thread for checking status of request
 			if (pthread_create(&status_thread, nullptr, checkStatus, NULL) != 0)
 			{
 				fprintf(stderr, "Error Creating Thread for checking status\n");

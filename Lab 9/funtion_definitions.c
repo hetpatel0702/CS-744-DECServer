@@ -15,6 +15,8 @@ int isEmpty()
 	if (front == -1) return 1;
 	return 0;
 }
+
+//function to enqueue request
 void enqueue(int newsockfd) 
 {
     pthread_mutex_lock(&qmutex);
@@ -32,6 +34,7 @@ void enqueue(int newsockfd)
     pthread_mutex_unlock(&qmutex);
 }
 
+//function to dequeue the request
 int dequeue()
 {
 	int sockfd;
@@ -58,6 +61,7 @@ int dequeue()
    
 }
 
+//function to write file size
 void filesize(FILE *fp,int newsockfd)
 {
 	fseek(fp,0,SEEK_END);
@@ -65,6 +69,8 @@ void filesize(FILE *fp,int newsockfd)
 	fclose(fp);
 	write(newsockfd,&file_size,sizeof(file_size));
 }
+
+//function to grade the file
 void sresult(int newsockfd,int fp,int a,char * buffer)
 {
 	bzero(buffer,BUFFER_SIZE);
@@ -109,6 +115,7 @@ void sresult(int newsockfd,int fp,int a,char * buffer)
 	}
 }
 
+//function to measure queue size
 void *measure_queue_size()
 {
 	while(1)
