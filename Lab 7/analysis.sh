@@ -12,7 +12,7 @@ codefile=$3
 loopNum=$4
 sleepTime=$5
 
-for i in 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80; do
+for i in 10 15 20 25 30 35 40; do
   ./loadtest.sh "$1" "$2" "$i" "$3" "$4" "$5"
 done
 

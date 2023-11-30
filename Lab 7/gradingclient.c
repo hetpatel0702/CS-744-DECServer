@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 			error("ERROR reading from socket");
 	}
 
-	printf("\nAverage Response Time:%lf\n",avgTime/loopNum2);
+	printf("\nAverage Response Time:%lf\n",avgTime/successfulRes);
 
 	if(gettimeofday(&tv,NULL) == 0){
 	end = (double)tv.tv_sec + tv.tv_usec / 1000000.0;

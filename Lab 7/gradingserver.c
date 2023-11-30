@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
       }
       else
       {
-        int runTheFile = system("./gradeThisFile >output.txt 2>Rerror.txt");
+        int runTheFile = system("./gradeThisFile >output.txt");
         if(runTheFile != 0)
         {
           char err[15000] = "RUNTIME ERROR\n";

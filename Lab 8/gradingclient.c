@@ -153,7 +153,6 @@ int main(int argc, char *argv[]) {
         if (n < 0){
             if (errno == EAGAIN || errno == EWOULDBLOCK) 
             {
-                // fprintf(stderr,"Received timeout.\n");
                 error("Received Timeout",sockfd,sleepTime,1);
             }
             else
