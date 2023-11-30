@@ -1,12 +1,11 @@
-#include "funtion_declarations.h"
-#include "handle_client.c"
-#include "funtion_definitions.c"
+#include "function_declarations.h"
 
 pthread_mutex_t qmutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t qempty = PTHREAD_COND_INITIALIZER;
 int qsize = 0;
 int front = -1;
 int rear = -1;
+int queue[MAX_QUEUE_SIZE];
 
 int main(int argc, char *argv[]) 
 {

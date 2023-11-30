@@ -1,14 +1,10 @@
-## Version 3 (Multithreaded Server with Thread pool)
+## Version 4 (Asynchronous Server)
 
-- **Performance Testing for version 3**
+- **Performance Testing for version 4**
 
-	- For Compiling the server
-
-			g++ main.c -o server
+	- For compiling client and server
 			
-	- For Compiling the client
-
-			g++ gradingclient.cpp -o client
+			make
 
 	- Run the server
 
@@ -19,3 +15,4 @@
 			bash analysis.sh
 
 		Script will generate the plot of response time, throughput, timeout rate, request rate, nlwp, goodput data, 		error rate and cpu utilization in their respective .png files
+

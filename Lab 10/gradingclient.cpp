@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     char buffer[BUFFER_SIZE]; 
 
     if (argc != 7) {
-        fprintf(stderr, "usage %s new/status hostname port file/requestId timeout progid\n", argv[0]);
+        fprintf(stderr, "usage %s new/status hostname port file/requestId timeout fileid\n", argv[0]);
         exit(0);
     }
     char* type = argv[1];
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        fprintf(stderr, "Usage %s new/status hostname port file/requestId timeout progid\n", argv[0]);
+        fprintf(stderr, "Usage %s new/status hostname port file/requestId timeout fileid\n", argv[0]);
         exit(0);
     }
 
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     timeout.tv_sec = atoi(argv[5]);
     timeout.tv_usec = 0;
 
-    int program_id = atoi(argv[6]);
+    int file_id = atoi(argv[6]);
     double start, end;
     double avgTime = 0;
 
@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
 
 
         char request_ID_file_command[50];
-        sprintf(request_ID_file_command,"echo %lld > client_request_id_%d.txt",reqID,program_id);
+        sprintf(request_ID_file_command,"echo %lld > client_request_id_%d.txt",reqID,file_id);
         system(request_ID_file_command);
 
     }
@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
     avgTime = (1.0 * totalTime) / successfulRes;
     double totalLoopTime = end - start;
 
-    printf("Successful Responses:%d\n", successfulRes);
+    printf("\nSuccessful Responses:%d\n", successfulRes);
     printf("Total Time:%lf\n", totalLoopTime);
     return 0;
 }

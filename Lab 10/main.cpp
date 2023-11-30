@@ -1,6 +1,4 @@
 #include "function_declarations.h"
-#include "handle_client.cpp"
-#include "function_definitions.cpp"
 
 unordered_map<long long int, pair<int,int>> request_status_map;
 
@@ -54,7 +52,7 @@ int main(int argc, char *argv[])
 
     clilen = sizeof(cli_addr);
 
-    int total_threads = atoi(argv[2]);
+    int total_threads = atoi(argv[2]) - 1;
 	int thread_pool1,thread_pool2;
 
     if(total_threads % 2 == 0)

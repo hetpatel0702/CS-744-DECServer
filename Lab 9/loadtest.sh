@@ -50,9 +50,6 @@ for ((j = 1; j <= numClients; j++)); do
   avgerrorrate=$(echo "$avgerrorrate + $avgerrorrate_i" | bc -l)
 done
 
-echo "overallthroughput = $overallthroughput"
-echo "avgresponsetime = $avgResponseTime"
-
 avgResponseTime=$(echo "$avgResponseTime / $numClients" | bc -l)
 echo "$numClients $overallthroughput" >> throughput_data.txt
 echo "$numClients $avgResponseTime" >> response_time_data.txt

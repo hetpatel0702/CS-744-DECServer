@@ -1,4 +1,4 @@
-#include "funtion_declarations.h"
+#include "function_declarations.h"
 
 void error(char *msg)
 {

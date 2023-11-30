@@ -1,15 +1,21 @@
-Performance Testing for version 2 (Create-Destroy Thread)
+## Version 2 (Multithreaded Server with Create-Destroy threads)
 
---->For Compiling the server 
-	use : g++ gradingserver.c -o server
+- **Performance Testing for version 2**
 
---->For Compiling the client 
-	use : g++ gradingclient.cpp -o client
+	- For Compiling the server
 
---->Run the server
-	using : ./server <port_number>  (port number set in the script is 7000)
+			g++ gradingserver.c -o server
+			
+	- For Compiling the client
 
---->Run	the analysis.sh
-	use : bash analysis.sh 
+			g++ gradingclient.cpp -o client
 
-The results of the script will the plot of response_time, throughput, timeout_rate, request_rate, nlwp, goodput_data, error_rate, cpu_utilization in their respective .png files
+	- Run the server
+
+			./server <port_number> (port number set in the analysis.sh is 7000)
+
+	- Run the analysis.sh
+
+			bash analysis.sh
+			
+		Script will generate the plot of response time, throughput, timeout rate, request rate, nlwp, goodput data, 		error rate and cpu utilization in their respective .png files

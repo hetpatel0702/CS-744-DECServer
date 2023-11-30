@@ -26,7 +26,6 @@ done < "$filename"
 echo $loop_num $total_response_time >> total_response_time.txt
 avg_resp=$(echo $total_response_time/$loop_num | bc -l) 
 echo "$loop_num $avg_resp">> avg_response_time.txt
-#echo $loop_num/$total_response_time | bc -l >> throughput.txt 
 
 rm response*.txt
 done 

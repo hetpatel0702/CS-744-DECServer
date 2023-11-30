@@ -1,7 +1,7 @@
-#include "funtion_declarations.h"
+#include "function_declarations.h"
 
 //function to grade the file
-void* gradeTheFile()
+void* gradeTheFile(void *f)
 {
 	while(1)
 	{

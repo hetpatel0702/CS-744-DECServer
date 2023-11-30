@@ -1,3 +1,4 @@
+#pragma once
 #include <stdio.h>
 #include <pthread.h>
 #include <fcntl.h>
@@ -12,9 +13,9 @@
 #define BUFFER_SIZE 128
 #define MAX_QUEUE_SIZE 500
 
-pthread_mutex_t qmutex;
-pthread_cond_t qempty; 
-int queue[MAX_QUEUE_SIZE];
+extern pthread_mutex_t qmutex;
+extern pthread_cond_t qempty; 
+extern int queue[MAX_QUEUE_SIZE];
 extern int qsize;
 extern int front;
 extern int rear;

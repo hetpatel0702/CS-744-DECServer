@@ -45,7 +45,7 @@ void filesize(FILE *fp, int newsockfd);
 
 void *receive_file(void *arg);
 
-void* gradeTheFile();
+void* gradeTheFile(void *f);
 
 void sresult(int newsockfd, int fp, int a, char *buffer);
 

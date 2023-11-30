@@ -88,9 +88,6 @@ void *gradeTheFile(void* f)
 		
 		if(compiling != 0)
 		{
-			sprintf(delete_files,"rm gradeFile%lld.c",reqID);
-			system(delete_files);
-
 			request_status_map[reqID].second = 0;
 		}
 		else
@@ -102,7 +99,7 @@ void *gradeTheFile(void* f)
 
 			if(runTheFile != 0)
 			{
-				sprintf(delete_files,"rm gradeFile%lld.c file%lld Cerror%lld.txt",reqID,reqID,reqID);
+				sprintf(delete_files,"rm file%lld Cerror%lld.txt",reqID,reqID);
 				system(delete_files);
 
 				request_status_map[reqID].second = 1;
@@ -115,19 +112,20 @@ void *gradeTheFile(void* f)
 				int difference = system(diff_command);
 				if(difference != 0)
 				{
-					sprintf(delete_files,"rm gradeFile%lld.c file%lld output%lld.txt Cerror%lld.txt",reqID,reqID,reqID,reqID);
+					sprintf(delete_files,"rm file%lld output%lld.txt Cerror%lld.txt",reqID,reqID,reqID);
 					system(delete_files);
-
 					request_status_map[reqID].second = 2;
 				}
 				else
 				{
 					request_status_map[reqID].second = 3;
-					sprintf(delete_files,"rm gradeFile%lld.c file%lld diff%lld.txt Cerror%lld.txt",reqID,reqID,reqID,reqID);
+					sprintf(delete_files,"rm file%lld diff%lld.txt Cerror%lld.txt",reqID,reqID,reqID);
 					system(delete_files);
 				}
 			}
 		}		
 		request_status_map[reqID].first=2;
+		sprintf(delete_files,"rm gradeFile%lld.c",reqID);
+		system(delete_files);
 	}
 }

@@ -1,16 +1,21 @@
-Performance Testing for version 2 (single threaded server)
---->For Compiling the server 
-	use : g++ gradingserver.c -o server
+## Version 1 (Single Threaded Server)
 
---->For Compiling the client 
-	use : g++ gradingclient.cpp -o client
+- **Performance Testing for Version 1**
 
---->Run the server
-	using : ./server <port_number>  (port number set in the script is 7000)
+	- Compile Server
 
-4. Run analysis.sh: bash analysis.sh <ipaddress> <server_port> <grading_file.c> <loopNum> <sleeptime>
+			g++ gradingserver.c -o server -lpthread
+			
+	- Compile Client
 
+			g++ gradingclient.cpp -o client -lpthread
 
-The resultant plot will be stored in the respective .png files of response graph and throughput graph
+	- Run Server
 
+			./server <port_number>
 
+	- Run analysis.sh 
+	
+			bash analysis.sh <ipaddress> <server_port> <file> <loopNum> <sleeptime>
+
+- The resultant plots will be stored in the respective .png files of response graph and throughput graph.
